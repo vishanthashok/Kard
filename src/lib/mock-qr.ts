@@ -4,12 +4,14 @@
  * Every piece of QR encoding/decoding used by the frontend lives here so the
  * real implementation can swap this module out without touching components.
  *
- * Expected production behaviour (backend owned):
- *   - the customer app requests a short-lived, signed token from the API
- *     (something like `GET /api/customer/qr-token`) and re-requests it before
- *     it expires;
- *   - the merchant scanner posts the raw scanned string to the API, which
- *     verifies the signature and expiry server side.
+ * Production behaviour (already implemented backend side):
+ *   - the customer app calls `GET /api/me/qr`, which mints a short-lived token,
+ *     stores only its HMAC hash and returns `{ token, url, expires_at }`. The
+ *     QR image encodes `url`, i.e. `{NEXT_PUBLIC_APP_URL}/c/{token}`, and the
+ *     app re-requests it before `expires_at`;
+ *   - the merchant scanner sends the raw scanned string to
+ *     `GET /api/merchant/customers/[token]`, which resolves and validates it
+ *     server side.
  *
  * Nothing here is secure. It exists only so the UI has something to render.
  */
@@ -34,17 +36,23 @@ export function createMockCustomerQrValue(memberId: string): string {
 }
 
 /**
- * Reads the customer handle out of a scanned string.
+ * Reads the customer handle out of a scanned string, accepting both the mock
+ * `kard://customer/<handle>` form and the production `<origin>/c/<token>` form
+ * so a real code scans without a UI change.
  *
  * TODO(backend): replace with a server-side verification call. The frontend
  * must never decide on its own whether a QR code is valid.
  */
 export function parseMockCustomerQrValue(value: string): string | null {
-  if (!value.startsWith(MOCK_QR_PREFIX)) {
-    return null;
+  const trimmed = value.trim();
+
+  if (trimmed.startsWith(MOCK_QR_PREFIX)) {
+    const handle = trimmed.slice(MOCK_QR_PREFIX.length);
+    return handle.length > 0 ? handle : null;
   }
-  const handle = value.slice(MOCK_QR_PREFIX.length).trim();
-  return handle.length > 0 ? handle : null;
+
+  const urlMatch = /^https?:\/\/[^/]+\/c\/(.+)$/.exec(trimmed);
+  return urlMatch?.[1] ?? null;
 }
 
 /** True when a scanned string looks like a Kard customer code. */

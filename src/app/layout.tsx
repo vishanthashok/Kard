@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "Kard",
     template: "%s · Kard",
   },
-  description: "One card. Every local spot. Earn and redeem points anywhere you go.",
+  description: "Universal loyalty platform for participating local businesses.",
 };
 
 export const viewport: Viewport = {
@@ -29,7 +29,11 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"

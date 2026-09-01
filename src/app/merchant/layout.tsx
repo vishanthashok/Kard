@@ -7,7 +7,11 @@ import { getCurrentMerchant } from "@/lib/api-client";
 /** Mock data is relative to the current date, so render per request. */
 export const dynamic = "force-dynamic";
 
-export default async function MerchantLayout({ children }: LayoutProps<"/merchant">) {
+export default async function MerchantLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const merchant = await getCurrentMerchant();
   const merchantMeta = `${merchant.locationCount} locations · Austin, TX`;
 

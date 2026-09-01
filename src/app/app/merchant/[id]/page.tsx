@@ -12,9 +12,13 @@ import { KardApiError } from "@/lib/api-types";
 import { getCurrentUser, getMerchantDetail } from "@/lib/api-client";
 import { formatDistance, formatPoints } from "@/lib/format";
 
+interface MerchantDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
 export default async function MerchantDetailPage({
   params,
-}: PageProps<"/app/merchant/[id]">) {
+}: MerchantDetailPageProps) {
   const { id } = await params;
   const user = await getCurrentUser();
 

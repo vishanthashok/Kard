@@ -36,9 +36,13 @@ function toPeriod(value: string | string[] | undefined): DashboardPeriod {
   return value === "week" || value === "month" ? value : "today";
 }
 
+interface MerchantDashboardPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
 export default async function MerchantDashboardPage({
   searchParams,
-}: PageProps<"/merchant/dashboard">) {
+}: MerchantDashboardPageProps) {
   const period = toPeriod((await searchParams).period);
   const dashboard = await getMerchantDashboard(undefined, period);
   const { merchant, stats, recentCustomers, recentTransactions, popularRewards } =

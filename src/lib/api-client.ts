@@ -2,15 +2,30 @@
  * Kard API client.
  *
  * Every screen reads its data through this module. Today each function resolves
- * mock data from `lib/mock-data.ts`; each one is marked with a TODO showing the
- * request the real Kard backend will serve. Swapping in the real API means
+ * mock data from `lib/mock-data.ts`; each one is marked with a TODO naming the
+ * route in `src/app/api` that replaces it. Swapping in the real API means
  * replacing the bodies here — no component changes required.
  *
  * Conventions the real implementation must keep:
- *   - functions are async and reject with `KardApiError` on failure;
- *   - read models (`WalletSummary`, `RewardProgress`, ...) are composed here if
- *     the backend returns raw rows;
+ *   - functions are async and reject with `KardApiError` on failure. API routes
+ *     answer with `{ error: { code, message, details? } }`, so the fetch wrapper
+ *     maps that payload onto `KardApiError`;
+ *   - the backend speaks snake_case DB rows; mapping to the camelCase types in
+ *     `api-types.ts` happens here and nowhere else;
+ *   - read models (`WalletSummary`, `RewardProgress`, ...) are composed here,
+ *     since the routes return raw rows;
  *   - no mock value ever leaks out of this file except through these functions.
+ *
+ * Known gaps to close when wiring the real API (see README §5):
+ *   - `profiles` has no member id or home city; `User.memberId` and
+ *     `User.homeCity` need a column or a derived value.
+ *   - `merchants` has no category or points-per-dollar column; the earning rate
+ *     is fixed at $1 = 1 point server side today.
+ *   - there is no per-customer-at-merchant transaction route yet, so
+ *     `getCustomerByQR()` and `getMerchantCustomerDetail()` cannot fill their
+ *     activity lists from the API as written.
+ *   - `GET /api/merchant/dashboard` returns all-time aggregates and no period
+ *     filter, so `DashboardPeriod` is frontend-only for now.
  */
 
 import {
@@ -152,13 +167,17 @@ function currentBalanceOf(wallet: Wallet): number {
 /* Session                                                                     */
 /* -------------------------------------------------------------------------- */
 
-/** TODO(backend): GET /api/me — resolve the Supabase session user. */
+/** TODO(backend): GET /api/me → `{ profile }`. */
 export async function getCurrentUser(): Promise<User> {
   await delay();
   return requireUser(MOCK_CURRENT_USER_ID);
 }
 
-/** TODO(backend): GET /api/merchant/me — resolve the merchant from the session. */
+/**
+ * TODO(backend): no route yet. The merchant identity comes from
+ * `resolveMerchantContext()` on every `/api/merchant/*` call, so this needs a
+ * `GET /api/merchant/me` returning the caller's merchant plus role.
+ */
 export async function getCurrentMerchant(): Promise<Merchant> {
   await delay();
   return requireMerchant(MOCK_CURRENT_MERCHANT_ID);
@@ -168,7 +187,7 @@ export async function getCurrentMerchant(): Promise<Merchant> {
 /* Customer reads                                                              */
 /* -------------------------------------------------------------------------- */
 
-/** TODO(backend): GET /api/wallets */
+/** TODO(backend): GET /api/me/wallets → `{ wallets: [{ ...walletRow, balance }] }`. */
 export async function getWallets(
   userId: Id = MOCK_CURRENT_USER_ID,
 ): Promise<WalletSummary[]> {
@@ -182,7 +201,10 @@ export async function getWallets(
     );
 }
 
-/** TODO(backend): GET /api/transactions?merchantId=&limit= */
+/**
+ * TODO(backend): GET /api/me/transactions?limit= → `{ transactions }`.
+ * The route has no merchant filter, so `options.merchantId` filters client side.
+ */
 export async function getTransactions(
   userId: Id = MOCK_CURRENT_USER_ID,
   options: { merchantId?: Id; limit?: number } = {},
@@ -204,7 +226,10 @@ export async function getTransactions(
   return options.limit ? transactions.slice(0, options.limit) : transactions;
 }
 
-/** TODO(backend): GET /api/rewards — every reward the customer can work toward. */
+/**
+ * TODO(backend): GET /api/me/rewards → `{ rewards }` (all active rewards) joined
+ * against GET /api/me/wallets for the balances.
+ */
 export async function getRewards(
   userId: Id = MOCK_CURRENT_USER_ID,
 ): Promise<RewardProgress[]> {
@@ -224,13 +249,16 @@ export async function getRewards(
     });
 }
 
-/** TODO(backend): GET /api/merchants */
+/** TODO(backend): GET /api/merchants → `{ merchants }`. */
 export async function getMerchants(): Promise<Merchant[]> {
   await delay();
   return [...mockMerchants];
 }
 
-/** TODO(backend): GET /api/merchants/:id (scoped to the signed-in customer). */
+/**
+ * TODO(backend): GET /api/merchants/[merchantId] → `{ merchant, locations, rewards }`,
+ * combined with the caller's wallet from GET /api/me/wallets.
+ */
 export async function getMerchantDetail(
   userId: Id,
   merchantId: Id,
@@ -266,7 +294,11 @@ export async function getMerchantDetail(
   };
 }
 
-/** TODO(backend): GET /api/merchants/nearby?lat=&lng= */
+/**
+ * TODO(backend): no nearby route yet. `locations` already stores latitude and
+ * longitude, so this becomes GET /api/merchants/nearby?lat=&lng= or a PostGIS
+ * RPC; distances must be computed server side.
+ */
 export async function getNearbyMerchants(
   userId: Id = MOCK_CURRENT_USER_ID,
 ): Promise<NearbyMerchant[]> {
@@ -301,8 +333,9 @@ export async function getNearbyMerchants(
 }
 
 /**
- * TODO(backend): GET /api/customer/qr-token — must return a short-lived signed
- * token. The mock value is intentionally static and insecure.
+ * TODO(backend): GET /api/me/qr → `{ token, url, expires_at }`. Encode `url`
+ * (`{NEXT_PUBLIC_APP_URL}/c/{token}`) in the QR image and re-request before
+ * `expires_at`. The mock value is intentionally static and insecure.
  */
 export async function getCustomerQrToken(
   userId: Id = MOCK_CURRENT_USER_ID,
@@ -316,7 +349,12 @@ export async function getCustomerQrToken(
 /* Merchant reads                                                              */
 /* -------------------------------------------------------------------------- */
 
-/** TODO(backend): GET /api/merchant/dashboard?period= */
+/**
+ * TODO(backend): GET /api/merchant/dashboard?merchantId= → `{ merchant_id, stats }`
+ * with `total_customers`, `total_transactions`, `points_issued`,
+ * `points_redeemed`, `repeat_customers`. All-time only: the period selector and
+ * the period-over-period deltas need date-range support server side.
+ */
 export async function getMerchantDashboard(
   merchantId: Id = MOCK_CURRENT_MERCHANT_ID,
   period: DashboardPeriod = "today",
@@ -363,7 +401,11 @@ export async function getMerchantDashboard(
   };
 }
 
-/** TODO(backend): GET /api/merchant/rewards */
+/**
+ * TODO(backend): the rewards list is only exposed through
+ * GET /api/merchants/[merchantId] (active rewards). A merchant-scoped
+ * GET /api/merchant/rewards is needed to show inactive ones too.
+ */
 export async function getMerchantRewards(
   merchantId: Id = MOCK_CURRENT_MERCHANT_ID,
 ): Promise<Reward[]> {
@@ -374,7 +416,11 @@ export async function getMerchantRewards(
     .sort((a, b) => a.pointsRequired - b.pointsRequired);
 }
 
-/** TODO(backend): GET /api/merchant/customers?search= */
+/**
+ * TODO(backend): no customer directory route yet. Needs
+ * GET /api/merchant/customers?merchantId=&search=&limit= returning wallets with
+ * derived balances, visit counts and last visit.
+ */
 export async function getMerchantCustomers(
   merchantId: Id = MOCK_CURRENT_MERCHANT_ID,
   search?: string,
@@ -389,7 +435,10 @@ export async function getMerchantCustomers(
     .sort((a, b) => Date.parse(b.lastVisitAt) - Date.parse(a.lastVisitAt));
 }
 
-/** TODO(backend): GET /api/merchant/customers/:id */
+/**
+ * TODO(backend): no route yet. Needs a per-customer view for a merchant:
+ * balance, visits, ledger rows and redemptions.
+ */
 export async function getMerchantCustomerDetail(
   merchantId: Id,
   customerId: Id,
@@ -412,9 +461,12 @@ export async function getMerchantCustomerDetail(
 }
 
 /**
- * TODO(backend): POST /api/merchant/scan — the server verifies the QR
- * signature, checks it has not expired and returns the customer profile.
- * The mock accepts any well formed `kard://customer/...` string.
+ * TODO(backend): GET /api/merchant/customers/[token]?merchantId= →
+ * `{ customer, wallet: { ...row, balance }, merchant_id }`. That route does not
+ * return rewards or activity, so also call GET /api/merchants/[merchantId] for
+ * the reward list; the recent-activity list needs a new route.
+ *
+ * The mock accepts any well formed customer code and never verifies anything.
  */
 export async function getCustomerByQR(
   merchantId: Id,
@@ -460,10 +512,13 @@ export async function getCustomerByQR(
 /* -------------------------------------------------------------------------- */
 
 /**
- * TODO(backend): POST /api/merchant/award-points.
+ * TODO(backend): POST /api/merchant/transactions/earn?merchantId= with
+ * `{ token, location_id, purchase_amount_cents, external_reference }` →
+ * `{ transaction_id, points_earned, new_balance, wallet_id }`.
  *
  * The backend owns the point calculation; the UI must render the returned
- * `pointsAwarded` and `newBalance` rather than anything computed locally. This
+ * `points_earned` and `new_balance` rather than anything computed locally.
+ * `external_reference` is unique per merchant, which makes a retry safe. This
  * mock does not persist anything.
  */
 export async function awardPoints(
@@ -506,8 +561,10 @@ export async function awardPoints(
 }
 
 /**
- * TODO(backend): POST /api/merchant/redeem — the server validates the balance
- * and writes the redemption. This mock only simulates a success response.
+ * TODO(backend): POST /api/merchant/rewards/redeem?merchantId= with
+ * `{ token, reward_id, location_id }` → `{ reward, points_spent, new_balance,
+ * redemption_id, transaction_id }`. The server locks the wallet and re-checks
+ * the ledger balance. This mock only simulates a success response.
  */
 export async function redeemReward(
   request: RedeemRewardRequest,
@@ -520,7 +577,11 @@ export async function redeemReward(
     throw new KardApiError("not_found", "That reward is no longer available.");
   }
 
-  const wallet = mockWallets.find((entry) => entry.id === request.walletId);
+  if (parseMockCustomerQrValue(request.customerQrToken) === null) {
+    throw new KardApiError("invalid_qr", "That code is not a Kard customer code.");
+  }
+
+  const wallet = walletFor(MOCK_CURRENT_USER_ID, request.merchantId);
   if (!wallet) {
     throw new KardApiError("not_found", "That Kard was not found.");
   }
@@ -553,8 +614,10 @@ export async function redeemReward(
 }
 
 /**
- * TODO(backend): POST /api/merchant/rewards — nothing is persisted today, the
- * created reward is returned so the UI can show it optimistically.
+ * TODO(backend): POST /api/merchant/rewards?merchantId= with
+ * `{ name, description, points_required, is_active }` → `{ reward }`
+ * (manager/owner only). Nothing is persisted today, the created reward is
+ * returned so the UI can show it optimistically.
  */
 export async function createReward(request: CreateRewardRequest): Promise<Reward> {
   await delay(400);

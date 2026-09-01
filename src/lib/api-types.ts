@@ -244,6 +244,11 @@ export interface AwardPointsRequest {
   /** Raw value decoded from the customer QR code. */
   customerQrToken: string;
   amountCents: number;
+  /**
+   * Idempotency key for the register. The backend enforces uniqueness per
+   * merchant, so a retried award never double-credits.
+   */
+  externalReference?: string | null;
 }
 
 export interface AwardPointsResult {
@@ -255,7 +260,12 @@ export interface AwardPointsResult {
 export interface RedeemRewardRequest {
   merchantId: Id;
   rewardId: Id;
-  walletId: Id;
+  /**
+   * Redemption is authorised by the scanned code, not by a wallet id — the
+   * server resolves the token to a customer and locks their wallet.
+   */
+  customerQrToken: string;
+  locationId?: Id | null;
 }
 
 export interface RedeemRewardResult {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, QrCode, Store } from "lucide-react";
+import { ArrowRight, QrCode, Store, TerminalSquare } from "lucide-react";
 
 import { KardLogo } from "@/components/kard/kard-logo";
 
@@ -15,6 +15,12 @@ const entries = [
     title: "Merchant tools",
     description: "Scan customers, award points and manage rewards.",
     icon: Store,
+  },
+  {
+    href: "/tester",
+    title: "API tester",
+    description: "Backend flow for scan → earn → redeem against real routes.",
+    icon: TerminalSquare,
   },
 ] as const;
 
@@ -52,6 +58,11 @@ export default function HomePage() {
           </li>
         ))}
       </ul>
+
+      <p className="mt-8 text-xs text-muted-foreground">
+        API routes live under <code className="font-mono">/api/*</code> — see the README
+        for the full route map.
+      </p>
     </main>
   );
 }

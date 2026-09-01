@@ -91,6 +91,8 @@ export function MerchantScanner({
         locationId,
         customerQrToken: testQrValue,
         amountCents,
+        // Unique per attempt so a retry cannot double-credit the customer.
+        externalReference: crypto.randomUUID(),
       });
 
       setSession((current) =>
@@ -117,7 +119,8 @@ export function MerchantScanner({
       const result = await redeemReward({
         merchantId,
         rewardId: reward.id,
-        walletId: session.customer.wallet.id,
+        customerQrToken: testQrValue,
+        locationId,
       });
 
       // Display-only ledger row; the backend will return the real transaction.
