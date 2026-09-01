@@ -13,6 +13,67 @@ This repo is the **V1 backend MVP**:
 
 > V1 rule: points earned at Merchant A are **not** spendable at Merchant B.
 
+The repo also contains the **customer app and merchant dashboard frontend**, built
+on mock data behind a single API seam — see §0.
+
+---
+
+## 0 · Frontend (customer app + merchant dashboard)
+
+Next.js App Router pages, Tailwind CSS v4, shadcn/ui primitives and Lucide icons.
+Every screen reads through `src/lib/api-client.ts`, which resolves mock data today.
+Each function there carries a `TODO(backend)` naming the route from §5 that
+replaces it, so wiring the real API up does not touch any component.
+
+Customer (mobile first):
+
+| Route                | Screen                                              |
+| -------------------- | --------------------------------------------------- |
+| `/app`               | Total balance, quick actions, "Your Kards"           |
+| `/app/merchant/[id]` | Balance, rewards, transactions, locations            |
+| `/app/scan`          | Customer QR code on a white panel                    |
+| `/app/rewards`       | Rewards across merchants, locked and unlocked        |
+| `/app/activity`      | Ledger grouped by Today / Yesterday / date           |
+| `/app/explore`       | Nearby participating businesses                      |
+| `/app/profile`       | Account summary                                      |
+
+Merchant (desktop, tablet, mobile):
+
+| Route                 | Screen                                                |
+| --------------------- | ----------------------------------------------------- |
+| `/merchant/dashboard` | Period stats, recent customers/transactions, rewards   |
+| `/merchant/scan`      | Scanner, award points, redeem rewards                  |
+| `/merchant/customers` | Searchable customer list with a detail panel           |
+| `/merchant/rewards`   | Active rewards and the create-reward form              |
+| `/merchant/settings`  | Business profile and locations                         |
+
+```
+src/
+├── app/app/…                  # customer screens (+ loading / error states)
+├── app/merchant/…             # merchant screens
+├── components/kard/…          # KardBalanceCard, MerchantCard, RewardCard,
+│                              # TransactionItem, CustomerQRCode, MerchantScanner,
+│                              # PointsProgress, StatCard, CustomerRow,
+│                              # MerchantSidebar, CustomerBottomNav, …
+├── components/ui/…            # shadcn primitives
+└── lib/
+    ├── api-types.ts           # entity + read-model types, KardApiClient contract
+    ├── api-client.ts          # every read/write the UI performs (mocked)
+    ├── mock-data.ts           # all mock records — only api-client imports it
+    ├── mock-qr.ts             # the only place QR payloads are built or parsed
+    ├── points-preview.ts      # preview-only point math (backend is authoritative)
+    └── format.ts              # currency / points / relative date helpers
+```
+
+Two boundaries the frontend deliberately does not cross:
+
+- **QR** — the customer screen renders whatever string `getCustomerQrToken()`
+  returns and the scanner posts it back untouched, so swapping the mock for
+  `GET /api/me/qr` + `GET /api/merchant/customers/[token]` needs no UI change.
+- **Points** — the "+12 points" figure next to the purchase input is labelled
+  preview only. Balances shown after a write come from the API response
+  (`points_earned` / `new_balance`), never from local math.
+
 ---
 
 ## 1 · Setup
