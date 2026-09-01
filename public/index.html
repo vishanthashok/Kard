@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kard — West Campus Rewards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">◈</span>
+        <span>Kard</span>
+      </div>
+      <p class="tagline">Universal rewards card for west campus</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Your Kard</h2>
+        <div id="cardWrap">
+          <form id="createForm" class="stack">
+            <label>Full name<input id="name" placeholder="Bevo Longhorn" required /></label>
+            <label>Email<input id="email" type="email" placeholder="bevo@utexas.edu" required /></label>
+            <button type="submit">Get my Kard</button>
+          </form>
+        </div>
+        <p id="createError" class="error" hidden></p>
+      </section>
+
+      <section class="panel">
+        <h2>West Campus Merchants</h2>
+        <div id="merchants" class="merchant-grid">Loading…</div>
+      </section>
+    </main>
+
+    <template id="cardTemplate">
+      <div class="kard">
+        <div class="kard-top">
+          <span class="kard-label">KARD</span>
+          <span class="kard-chip"></span>
+        </div>
+        <div class="kard-number" data-field="cardNumber"></div>
+        <div class="kard-bottom">
+          <div>
+            <span class="kard-caption">MEMBER</span>
+            <div data-field="name"></div>
+          </div>
+          <div class="kard-points">
+            <span class="kard-caption">POINTS</span>
+            <div data-field="points"></div>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="action-block">
+          <h3>Earn points</h3>
+          <select data-field="earnMerchant"></select>
+          <input type="number" min="1" step="1" placeholder="Amount ($)" data-field="earnAmount" />
+          <button data-action="earn">Record purchase</button>
+        </div>
+        <div class="action-block">
+          <h3>Redeem a reward</h3>
+          <select data-field="redeemReward"></select>
+          <button data-action="redeem">Redeem</button>
+        </div>
+      </div>
+      <p class="flash" data-field="flash" hidden></p>
+      <h3 class="history-title">Activity</h3>
+      <ul class="history" data-field="history"></ul>
+      <button class="link" data-action="reset">Use a different card</button>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

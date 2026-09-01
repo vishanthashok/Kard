@@ -1,0 +1,17 @@
+{
+  "name": "Kard",
+  "install": "./scripts/cloud-agent-install.sh",
+  "terminals": [
+    {
+      "name": "kard-server",
+      "command": "DATABASE_URL=\"${DATABASE_URL:-file:./dev.db}\" PORT=3000 npm run dev",
+      "description": "Kard Express + Prisma dev server on http://0.0.0.0:3000"
+    }
+  ],
+  "ports": [
+    {
+      "name": "Kard web",
+      "port": 3000
+    }
+  ]
+}
