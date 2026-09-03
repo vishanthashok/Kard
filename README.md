@@ -18,6 +18,41 @@ on mock data behind a single API seam — see §0.
 
 ---
 
+## Demo
+
+Screens below are the running app (`npm run build && npm start`) reading the mock
+data layer described in §0.
+
+### Customer app
+
+| Home | Your Kard | Rewards |
+| :--: | :-------: | :-----: |
+| <img src="docs/screenshots/customer-home.png" alt="Customer home showing the total points balance and per-merchant Kards" width="240"> | <img src="docs/screenshots/customer-scan.png" alt="Customer QR code on a white panel, ready to scan at the counter" width="240"> | <img src="docs/screenshots/customer-rewards.png" alt="Rewards across merchants, split into ready to redeem and keep earning" width="240"> |
+
+| Merchant detail | Activity | Explore |
+| :-------------: | :------: | :-----: |
+| <img src="docs/screenshots/customer-merchant.png" alt="Merchant page with balance, reward progress and available rewards" width="240"> | <img src="docs/screenshots/customer-activity.png" alt="Ledger of points earned and redeemed, grouped by day" width="240"> | <img src="docs/screenshots/customer-explore.png" alt="Nearby participating businesses with earning rates and rewards" width="240"> |
+
+### Merchant dashboard
+
+Period stats, recent customers and transactions, and popular rewards:
+
+![Merchant dashboard with customer, transaction, points issued and rewards redeemed stats](docs/screenshots/merchant-dashboard.png)
+
+Scan a customer Kard, then award points or redeem a reward:
+
+![Merchant scan screen showing a scanned customer, the award points form and their available rewards](docs/screenshots/merchant-scan.png)
+
+Searchable customer list with a detail panel of balance, visits and recent activity:
+
+![Merchant customers list with a selected customer's detail panel](docs/screenshots/merchant-customers.png)
+
+Active and inactive rewards:
+
+![Merchant rewards screen listing active and inactive rewards](docs/screenshots/merchant-rewards.png)
+
+---
+
 ## 0 · Frontend (customer app + merchant dashboard)
 
 Next.js App Router pages, Tailwind CSS v4, shadcn/ui primitives and Lucide icons.
